@@ -6,6 +6,7 @@ from tkinter import messagebox as mb
 from tkinter import simpledialog as sd
 import numpy as np
 
+
 class Projection(Enum):
     Perspective = 0
     Axonometric = 1
@@ -101,25 +102,30 @@ class Point(Shape):
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         if projection == Projection.Perspective:
-            x = self.x / (1 - self.z / 1000) + 450
-            y = self.y / (1 - self.z / 1000) + 250
+            print(App.dist)
+            x = self.x / (1 - self.z / App.dist) + 450
+            y = self.y / (1 - self.z / App.dist) + 250
             z = self.z + 100
         elif projection == Projection.Axonometric:
-            w = 35
-            phi = 60
-            iso = np.array([[cos(w),cos(phi)*sin(w),0,0],[0,cos(phi),0,0],[sin(w),-sin(phi)*cos(w),0,0],[0,0,0,1]])
-            coor = np.array([self.x,self.y,self.z,1])
-            res = np.matmul(coor,iso)
+            print(App.phi, App.theta)
+            phi = App.phi
+            theta = App.theta
+            iso = np.array([
+                [cos(phi), cos(theta)*sin(phi), 0, 0],
+                [0, cos(theta), 0, 0],
+                [sin(phi), -sin(theta)*cos(phi), 0, 0],
+                [0, 0, 0, 1]])
+            coor = np.array([self.x, self.y, self.z, 1])
+            res = np.matmul(coor, iso)
             x = res[0] + 600
             y = res[1] + 250
-            z = res[2] 
+            z = res[2]
         else:
             x = self.x
             y = self.y
             z = self.z
         canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="black")
-        return x,y,z
-        ...
+        return x, y, z
 
     def __iter__(self):
         yield self.x
@@ -156,8 +162,8 @@ class Line(Shape):
     p2: Point
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
-        p1X, p1Y,z = self.p1.draw(canvas,projection)
-        p2X, p2Y,z = self.p2.draw(canvas,projection)
+        p1X, p1Y, z = self.p1.draw(canvas, projection)
+        p2X, p2Y, z = self.p2.draw(canvas, projection)
         canvas.create_line(p1X, p1Y, p2X, p2Y, **kwargs)
 
     # def in_rect(self, p1: Point, p2: Point) -> bool:
@@ -186,7 +192,7 @@ class Polygon(Shape):
         ln = len(self.points)
         lines = [Line(self.points[i], self.points[(i + 1) % ln]) for i in range(ln)]
         for line in lines:
-            line.draw(canvas,projection)
+            line.draw(canvas, projection)
 
     # def in_rect(self, p1: Point, p2: Point) -> bool:
     #     """Проверка, что полигон пересекает прямоугольник"""
@@ -213,7 +219,7 @@ class Polyhedron(Shape):
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         for poly in self.polygons:
-            poly.draw(canvas,projection)
+            poly.draw(canvas, projection)
 
     # def in_rect(self, p1: Point, p2: Point) -> bool:
     #     """Проверка, что многогранник пересекает прямоугольник"""
@@ -236,6 +242,7 @@ class Polyhedron(Shape):
                      sum(polygon.center.z for polygon in self.polygons) /
                      len(self.polygons))
 
+
 class Models:
     """
     Tetrahedron = 0
@@ -244,8 +251,23 @@ class Models:
     Icosahedron = 3
     Dodecahedron = 4
     """
-    class Cube(Polyhedron):
-        def __init__(self, size = 100):
+    class Tetrahedron(Polyhedron):
+        def __init__(self, size=100):
+            t = Models.Hexahedron(size)
+            p1 = t.polygons[0].points[1]
+            p2 = t.polygons[0].points[3]
+            p3 = t.polygons[2].points[2]
+            p4 = t.polygons[1].points[3]
+            polygons = [
+                Polygon([p1, p2, p3]),
+                Polygon([p1, p2, p4]),
+                Polygon([p1, p3, p4]),
+                Polygon([p2, p3, p4])
+            ]
+            super().__init__(polygons)
+
+    class Hexahedron(Polyhedron):
+        def __init__(self, size=100):
             p1 = Point(0, 0, 0)
             p2 = Point(size, 0, 0)
             p3 = Point(size, size, 0)
@@ -263,24 +285,10 @@ class Models:
                 Polygon([p5, p6, p7, p8])
             ]
             super().__init__(polygons)
-    class Tetrahedron(Polyhedron):
-        def __init__(self, size = 100):
-            t = Models.Cube(size)
-            p1 = t.polygons[0].points[1]
-            p2 = t.polygons[0].points[3]
-            p3 = t.polygons[2].points[2]
-            p4 = t.polygons[1].points[3]
-            polygons = [
-                Polygon([p1, p2, p3]),
-                Polygon([p1, p2, p4]),
-                Polygon([p1, p3, p4]),
-                Polygon([p2, p3, p4])
-            ]
-            super().__init__(polygons)
 
     class Octahedron(Polyhedron):
-        def __init__(self, size = 100):
-            t = Models.Cube(size)
+        def __init__(self, size=100):
+            t = Models.Hexahedron(size)
             p1 = t.polygons[0].center
             p2 = t.polygons[1].center
             p3 = t.polygons[2].center
@@ -299,8 +307,9 @@ class Models:
             ]
             super().__init__(polygons)
 
+
 class App(tk.Tk):
-    W: int = 1000
+    W: int = 1200
     H: int = 600
     shape: Shape = None
     shape_type_idx: int
@@ -309,6 +318,9 @@ class App(tk.Tk):
     func: Function
     projection: Projection
     projection_idx: int
+    phi: int = 60
+    theta: int = 45
+    dist: int = 1000
 
     def __init__(self):
         super().__init__()
@@ -324,11 +336,15 @@ class App(tk.Tk):
         self.create_widgets()
 
     def create_widgets(self):
-        self.canvas = tk.Canvas(self, width=self.W, height=self.H - 35)
+        self.canvas = tk.Canvas(self, width=self.W, height=self.H - 75)
         self.buttons = tk.Frame(self)
         self.translateb = tk.Button(self.buttons, text="Смещение", command=self.translate)
         self.rotateb = tk.Button(self.buttons, text="Поворот", command=self.rotate)
         self.scaleb = tk.Button(self.buttons, text="Масштаб", command=self.scale)
+        self.phis = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="φ", command=self.phi_changed)
+        self.thetas = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="θ", command=self.theta_changed)
+        self.dists = tk.Scale(self.buttons, from_=1, to=self.W, orient=tk.HORIZONTAL, label="Расстояние", command=self.dist_changed)
+
         self.shapesbox = tk.Listbox(self.buttons, selectmode=tk.SINGLE, height=1, width=15)
         self.scroll1 = tk.Scrollbar(self.buttons, orient=tk.VERTICAL, command=self._scroll1)
         self.funcsbox = tk.Listbox(self.buttons, selectmode=tk.SINGLE, height=1, width=40)
@@ -342,6 +358,13 @@ class App(tk.Tk):
         self.translateb.pack(side=tk.LEFT, padx=5)
         self.rotateb.pack(side=tk.LEFT, padx=5)
         self.scaleb.pack(side=tk.LEFT, padx=5)
+        self.phis.pack(side=tk.LEFT, padx=5)
+        self.thetas.pack(side=tk.LEFT, padx=5)
+        self.dists.pack(side=tk.LEFT, padx=5)
+
+        self.phis.set(self.phi)
+        self.thetas.set(self.theta)
+        self.dists.set(self.dist)
 
         self.scroll1.pack(side=tk.RIGHT, fill=tk.Y)
         self.shapesbox.pack(side=tk.RIGHT, padx=1)
@@ -417,8 +440,22 @@ class App(tk.Tk):
         self.projection = Projection(self.projection_idx)
         self.projectionsbox.yview(*args)
         self.reset()
-        self.shape.draw(self.canvas,self.projection)
+        self.shape.draw(self.canvas, self.projection)
 
+    def dist_changed(self, *_):
+        App.dist = self.dists.get()
+        self.reset()
+        self.shape.draw(self.canvas, self.projection)
+
+    def phi_changed(self, *_):
+        App.phi = self.phis.get()
+        self.reset()
+        self.shape.draw(self.canvas, self.projection)
+
+    def theta_changed(self, *_):
+        App.theta = self.thetas.get()
+        self.reset()
+        self.shape.draw(self.canvas, self.projection)
     def __translate(self, x, y, z):
         ...
 
@@ -434,7 +471,7 @@ class App(tk.Tk):
                 self.shape = Models.Octahedron()
                 self.__translate(event.x, event.y, 0)
             case ShapeType.Hexahedron:
-                self.shape = Models.Cube()
+                self.shape = Models.Hexahedron()
                 self.__translate(event.x, event.y, 0)
             # case ShapeType.Icosahedron:
             #     self.shape = Models.Icosahedron()
