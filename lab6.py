@@ -452,21 +452,71 @@ class App(tk.Tk):
         if del_shape:
             self.shape = None
 
-    def rotate(self):
+    #x_rotation
+    def rotate_x(self):
         inp = sd.askfloat("Поворот", "Введите угол поворота в градусах")
         if inp is None:
             return
         phi = radians(inp)
-        ...
-        # TODO: реализовать поворот
+        m,n,k=self.shape.center
+        
+        mat_x = np.array([
+            [1,0,0,0],
+            [0,cos(phi),sin(phi),0],
+            [0,-sin(phi),cos(phi),0],
+            [0,0,0,1]])
+
+        self.shape.transform(mat_x)
+        self.after(1,self.focus_force)
+
+    #y_rotation
+    def rotate_y(self):
+        inp = sd.askfloat("Поворот", "Введите угол поворота в градусах")
+        if inp is None:
+            return
+        phi = radians(inp)
+        m,n,k=self.shape.center
+        
+        #y-rotation
+        mat_y = np.array([
+            [cos(phi),0,-sin(phi),0],
+            [0,1,0,0],
+            [sin(phi),0,cos(phi),0],
+            [0,0,0,1]])
+
+        self.shape.transform(mat_y)
+        self.after(1,self.focus_force)
+    
+    def rotate_z(self):
+        inp = sd.askfloat("Поворот", "Введите угол поворота в градусах")
+        if inp is None:
+            return
+        phi = radians(inp)
+        m,n,k=self.shape.center
+        
+        mat_z = np.array([
+            [cos(phi),sin(phi),0,0],
+            [-sin(phi),cos(phi),0,0],
+            [0,0,1,0],
+            [0,0,0,1]])
+
+        self.shape.transform(mat_z)
+        self.after(1,self.focus_force)
 
     def scale(self):
         inp = sd.askstring("Масштаб", "Введите коэффициенты масштабирования по осям x, y, z:")
         if inp is None:
             return
         sx, sy, sz = map(float, inp.split(','))
-        ...
+        m,n,k=self.shape.center
         # TODO: сделать масштабирование
+        mat= np.array([
+            [sx,0,0,m*sx-m],
+            [0,sy,0,n*sy-n],
+            [0,0,sz,k*sz-k],
+            [0,0,0,1]])  
+        self.shape.transform(mat)
+        self.after(1,self.focus_force)
 
     def translate(self):
         inp = sd.askstring("Смещение", "Введите вектор смещения по осям x, y, z:")
@@ -475,6 +525,13 @@ class App(tk.Tk):
         dx, dy, dz = map(float, inp.split(','))
         ...
         # TODO: смещение
+        mat= np.array([
+            [1,0,0,dx],
+            [0,1,0,dy],
+            [0,0,1,dz],
+            [0,0,0,1]])
+        self.shape.transform(mat)
+        self.after(1,self.focus_force)
 
     def _scroll1(self, *args):
         d = int(args[1])
