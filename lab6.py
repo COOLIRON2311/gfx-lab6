@@ -5,7 +5,7 @@ from math import cos, radians, sin, tan
 from tkinter import messagebox as mb
 from tkinter import simpledialog as sd
 import numpy as np
-
+from models import Models
 
 class Projection(Enum):
     Perspective = 0
@@ -18,6 +18,7 @@ class Projection(Enum):
             case Projection.Axonometric:
                 return "Аксонометрическая"
         return "Неизвестная проекция"
+
 
 class Mode(Enum):
     Translate = 0  # перемещение
@@ -338,11 +339,30 @@ class App(tk.Tk):
         self.projectionsbox.yview(*args)
         # TODO: перерисовать фигуру с новой проекцией
 
+    def __translate(self, x, y, z):
+        ...
+
     def l_click(self, event: tk.Event):
         if self.shape is not None:
             return
-        return # TODO: реализовать создание фигуры
         self.reset()
+        match self.shape_type:
+            case ShapeType.Tetrahedron:
+                self.shape = Models.Tetrahedron()
+                self.__translate(event.x, event.y, 0)
+                self.shape.draw()
+            case ShapeType.Octahedron:
+                self.shape = Models.Octahedron()
+                self.__translate(event.x, event.y, 0)
+            # case ShapeType.Hexahedron:
+            #     self.shape = Models.Hexahedron()
+            #     self.__translate(event.x, event.y, 0)
+            # case ShapeType.Icosahedron:
+            #     self.shape = Models.Icosahedron()
+            #     self.__translate(event.x, event.y, 0)
+            # case ShapeType.Dodecahedron:
+            #     self.shape = Models.Dodecahedron()
+            #     self.__translate(event.x, event.y, 0)
         self.shape.draw(self.canvas, self.projection)
 
     def r_click(self, event: tk.Event):
@@ -352,13 +372,13 @@ class App(tk.Tk):
             case Function.None_:
                 return
             case Function.ReflectOverPlane:
-                ... # TODO: отражение относительно плоскости
+                ...  # TODO: отражение относительно плоскости
             case Function.ScaleAboutCenter:
-                ... # TODO: масштабирование относительно центра
+                ...  # TODO: масштабирование относительно центра
             case Function.RotateAroundAxis:
-                ... # TODO: поворот относительно оси
+                ...  # TODO: поворот относительно оси
             case Function.RotateAroundLine:
-                ... # TODO: поворот относительно прямой
+                ...  # TODO: поворот относительно прямой
 
     def run(self):
         self.mainloop()
