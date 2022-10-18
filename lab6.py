@@ -100,13 +100,25 @@ class Point(Shape):
     z: float
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
-        # if projection == Projection.Perspective:
-        #     x = self.x / (1 - self.z / 1000)
-        #     y = self.y / (1 - self.z / 1000)
-        # else:
-        #     x = self.x
-        #     y = self.y
-        # canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="black")
+        if projection == Projection.Perspective:
+            x = self.x / (1 - self.z / 1000) + 450
+            y = self.y / (1 - self.z / 1000) + 250
+            z = self.z + 100
+        elif projection == Projection.Axonometric:
+            w = 35
+            phi = 60
+            iso = np.array([[cos(w),cos(phi)*sin(w),0,0],[0,cos(phi),0,0],[sin(w),-sin(phi)*cos(w),0,0],[0,0,0,1]])
+            coor = np.array([self.x,self.y,self.z,1])
+            res = np.matmul(coor,iso)
+            x = res[0] + 600
+            y = res[1] + 250
+            z = res[2] 
+        else:
+            x = self.x
+            y = self.y
+            z = self.z
+        canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="black")
+        return x,y,z
         ...
 
     def __iter__(self):
@@ -144,7 +156,9 @@ class Line(Shape):
     p2: Point
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
-        ...
+        p1X, p1Y,z = self.p1.draw(canvas,projection)
+        p2X, p2Y,z = self.p2.draw(canvas,projection)
+        canvas.create_line(p1X, p1Y, p2X, p2Y, **kwargs)
 
     # def in_rect(self, p1: Point, p2: Point) -> bool:
     #     """Проверка, что линия пересекает прямоугольник"""
@@ -169,7 +183,10 @@ class Polygon(Shape):
     points: list[Point]
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
-        ...
+        ln = len(self.points)
+        lines = [Line(self.points[i], self.points[(i + 1) % ln]) for i in range(ln)]
+        for line in lines:
+            line.draw(canvas,projection)
 
     # def in_rect(self, p1: Point, p2: Point) -> bool:
     #     """Проверка, что полигон пересекает прямоугольник"""
@@ -195,7 +212,8 @@ class Polyhedron(Shape):
     polygons: list[Polygon]
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
-        ...
+        for poly in self.polygons:
+            poly.draw(canvas,projection)
 
     # def in_rect(self, p1: Point, p2: Point) -> bool:
     #     """Проверка, что многогранник пересекает прямоугольник"""
@@ -248,10 +266,10 @@ class Models:
     class Tetrahedron(Polyhedron):
         def __init__(self, size = 100):
             t = Models.Cube(size)
-            p1 = t.polygons[0].points[0]
-            p2 = t.polygons[0].points[1]
-            p3 = t.polygons[0].points[2]
-            p4 = t.polygons[0].points[3]
+            p1 = t.polygons[0].points[1]
+            p2 = t.polygons[0].points[3]
+            p3 = t.polygons[2].points[2]
+            p4 = t.polygons[1].points[3]
             polygons = [
                 Polygon([p1, p2, p3]),
                 Polygon([p1, p2, p4]),
@@ -355,7 +373,7 @@ class App(tk.Tk):
 
     def reset(self, *_):
         self.canvas.delete("all")
-        self.shape = None
+        #self.shape = None
 
     def rotate(self):
         inp = sd.askfloat("Поворот", "Введите угол поворота в градусах")
@@ -398,7 +416,8 @@ class App(tk.Tk):
         self.projection_idx = (self.projection_idx + d) % len(Projection)
         self.projection = Projection(self.projection_idx)
         self.projectionsbox.yview(*args)
-        # TODO: перерисовать фигуру с новой проекцией
+        self.reset()
+        self.shape.draw(self.canvas,self.projection)
 
     def __translate(self, x, y, z):
         ...
@@ -414,9 +433,9 @@ class App(tk.Tk):
             case ShapeType.Octahedron:
                 self.shape = Models.Octahedron()
                 self.__translate(event.x, event.y, 0)
-            # case ShapeType.Hexahedron:
-            #     self.shape = Models.Hexahedron()
-            #     self.__translate(event.x, event.y, 0)
+            case ShapeType.Hexahedron:
+                self.shape = Models.Cube()
+                self.__translate(event.x, event.y, 0)
             # case ShapeType.Icosahedron:
             #     self.shape = Models.Icosahedron()
             #     self.__translate(event.x, event.y, 0)
