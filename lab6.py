@@ -1,7 +1,7 @@
 import tkinter as tk
 from dataclasses import dataclass
 from enum import Enum
-from math import cos, radians, sin, tan
+from math import cos, pi, radians, sin, tan
 from tkinter import messagebox as mb
 from tkinter import simpledialog as sd
 import numpy as np
@@ -102,14 +102,14 @@ class Point(Shape):
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         if projection == Projection.Perspective:
-            print(App.dist)
+            #print(App.dist)
             x = self.x / (1 - self.z / App.dist) + 450
             y = self.y / (1 - self.z / App.dist) + 250
             z = self.z + 100
         elif projection == Projection.Axonometric:
-            print(App.phi, App.theta)
-            phi = App.phi
-            theta = App.theta
+            #print(App.phi, App.theta)
+            phi = App.phi*(pi/180)
+            theta = App.theta*(pi/180)
             iso = np.array([
                 [cos(phi), cos(theta)*sin(phi), 0, 0],
                 [0, cos(theta), 0, 0],
@@ -297,13 +297,13 @@ class Models:
             p6 = t.polygons[5].center
             polygons = [
                 Polygon([p1, p2, p3]),
-                Polygon([p1, p2, p4]),
-                Polygon([p1, p3, p5]),
-                Polygon([p1, p4, p5]),
+                Polygon([p1, p3, p4]),
+                Polygon([p1, p5, p4]),
+                Polygon([p1, p2, p5]),
                 Polygon([p2, p3, p6]),
-                Polygon([p2, p4, p6]),
-                Polygon([p3, p5, p6]),
-                Polygon([p4, p5, p6])
+                Polygon([p5, p4, p6]),
+                Polygon([p3, p4, p6]),
+                Polygon([p2, p5, p6])
             ]
             super().__init__(polygons)
 
