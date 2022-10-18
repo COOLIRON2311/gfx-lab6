@@ -102,7 +102,7 @@ class Point(Shape):
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         if projection == Projection.Perspective:
-            #print(App.dist)
+            # print(App.dist)
             x = self.x / (1 - self.z / App.dist) + 450
             y = self.y / (1 - self.z / App.dist) + 250
             z = self.z + 100
@@ -361,6 +361,7 @@ class Models:
             # super().__init__(polygons)
             # TODO: fix this
 
+
 class App(tk.Tk):
     W: int = 1200
     H: int = 600
@@ -395,8 +396,10 @@ class App(tk.Tk):
         self.rotateb = tk.Button(self.buttons, text="Поворот", command=self.rotate)
         self.scaleb = tk.Button(self.buttons, text="Масштаб", command=self.scale)
         self.phis = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="φ", command=self._phi_changed)
-        self.thetas = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="θ", command=self._theta_changed)
-        self.dists = tk.Scale(self.buttons, from_=1, to=self.W, orient=tk.HORIZONTAL, label="Расстояние", command=self._dist_changed)
+        self.thetas = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL,
+                               label="θ", command=self._theta_changed)
+        self.dists = tk.Scale(self.buttons, from_=1, to=self.W, orient=tk.HORIZONTAL,
+                              label="Расстояние", command=self._dist_changed)
 
         self.shapesbox = tk.Listbox(self.buttons, selectmode=tk.SINGLE, height=1, width=15)
         self.scroll1 = tk.Scrollbar(self.buttons, orient=tk.VERTICAL, command=self._scroll1)
@@ -452,85 +455,67 @@ class App(tk.Tk):
         if del_shape:
             self.shape = None
 
-    #x_rotation
-    def rotate_x(self):
-        inp = sd.askfloat("Поворот", "Введите угол поворота в градусах")
+    def rotate(self):
+        inp = sd.askstring("Поворот", "Введите угол поворота в градусах по x, y, z:")
         if inp is None:
             return
-        phi = radians(inp)
-        m,n,k=self.shape.center
-        
+        phi, theta, psi = map(radians, map(float, inp.split(', ')))
+        m, n, k = self.shape.center
+
+        # TODO: какая-то хуйня с поворотом
         mat_x = np.array([
-            [1,0,0,0],
-            [0,cos(phi),sin(phi),-k * cos(phi) - n * cos(phi) + n],
-            [0,-sin(phi),cos(phi),-k * cos(phi) + n * sin(phi) + k],
-            [0,0,0,1]])
+            [1, 0, 0, 0],
+            [0, cos(phi), sin(phi), -k * cos(phi) - n * cos(phi) + n],
+            [0, -sin(phi), cos(phi), -k * cos(phi) + n * sin(phi) + k],
+            [0, 0, 0, 1]])
+
+        mat_y = np.array([
+            [cos(theta), 0, -sin(theta), k * sin(theta) - m * cos(theta) + m],
+            [0, 1, 0, 0],
+            [sin(theta), 0, cos(theta), -k * cos(theta) - m * sin(theta) + k],
+            [0, 0, 0, 1]])
+
+        mat_z = np.array([
+            [cos(psi), -sin(psi), 0, -m * cos(psi) + n * sin(psi) + m],
+            [sin(psi), cos(psi), 0, -m * sin(psi) - n * cos(psi) + n],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]])
 
         self.shape.transform(mat_x)
-        self.after(1,self.focus_force)
-
-    #y_rotation
-    def rotate_y(self):
-        inp = sd.askfloat("Поворот", "Введите угол поворота в градусах")
-        if inp is None:
-            return
-        phi = radians(inp)
-        m,n,k=self.shape.center
-        
-        mat_y = np.array([
-            [cos(phi),0,-sin(phi),k * sin(phi) - m * cos(phi) + m],
-            [0,1,0,0],
-            [sin(phi),0,cos(phi),-k * cos(phi) - m * sin(phi) + k],
-            [0,0,0,1]])
-
         self.shape.transform(mat_y)
-        self.after(1,self.focus_force)
-    
-    def rotate_z(self):
-        inp = sd.askfloat("Поворот", "Введите угол поворота в градусах")
-        if inp is None:
-            return
-        phi = radians(inp)
-        m,n,k=self.shape.center
-        
-        mat_z = np.array([
-            [cos(phi),-sin(phi),0,-m * cos(phi) + n * sin(phi) + m],
-            [sin(phi),cos(phi),0,-m * sin(phi) - n * cos(phi) + n],
-            [0,0,1,0],
-            [0,0,0,1]])
-
         self.shape.transform(mat_z)
-        self.after(1,self.focus_force)
+        self.reset(del_shape=False)
+        self.shape.draw(self.canvas, self.projection)
 
     def scale(self):
         inp = sd.askstring("Масштаб", "Введите коэффициенты масштабирования по осям x, y, z:")
         if inp is None:
             return
         sx, sy, sz = map(float, inp.split(','))
-        m,n,k=self.shape.center
+        m, n, k = self.shape.center
         # TODO: сделать масштабирование
-        mat= np.array([
-            [sx,0,0,m*sx-m],
-            [0,sy,0,n*sy-n],
-            [0,0,sz,k*sz-k],
-            [0,0,0,1]])  
+        mat = np.array([
+            [sx, 0, 0, -m*sx+m],
+            [0, sy, 0, -n*sy+n],
+            [0, 0, sz, -k*sz+k],
+            [0, 0, 0, 1]])
         self.shape.transform(mat)
-        self.after(1,self.focus_force)
+        self.reset(del_shape=False)
+        self.shape.draw(self.canvas, self.projection)
 
     def translate(self):
         inp = sd.askstring("Смещение", "Введите вектор смещения по осям x, y, z:")
         if inp is None:
             return
         dx, dy, dz = map(float, inp.split(','))
-        ...
-        # TODO: смещение
-        mat= np.array([
-            [1,0,0,dx],
-            [0,1,0,dy],
-            [0,0,1,dz],
-            [0,0,0,1]])
+        mat = np.array([
+            [1, 0, 0, dx],
+            [0, 1, 0, dy],
+            [0, 0, 1, dz],
+            [0, 0, 0, 1]])
         self.shape.transform(mat)
-        self.after(1,self.focus_force)
+        self.reset(del_shape=False)
+        self.shape.draw(self.canvas, self.projection)
 
     def _scroll1(self, *args):
         d = int(args[1])
