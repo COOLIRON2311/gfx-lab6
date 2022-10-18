@@ -408,8 +408,8 @@ class App(tk.Tk):
         
         mat_x = np.array([
             [1,0,0,0],
-            [0,cos(phi),sin(phi),0],
-            [0,-sin(phi),cos(phi),0],
+            [0,cos(phi),sin(phi),-k * cos(phi) - n * cos(phi) + n],
+            [0,-sin(phi),cos(phi),-k * cos(phi) + n * sin(phi) + k],
             [0,0,0,1]])
 
         self.shape.transform(mat_x)
@@ -423,11 +423,10 @@ class App(tk.Tk):
         phi = radians(inp)
         m,n,k=self.shape.center
         
-        #y-rotation
         mat_y = np.array([
-            [cos(phi),0,-sin(phi),0],
+            [cos(phi),0,-sin(phi),k * sin(phi) - m * cos(phi) + m],
             [0,1,0,0],
-            [sin(phi),0,cos(phi),0],
+            [sin(phi),0,cos(phi),-k * cos(phi) - m * sin(phi) + k],
             [0,0,0,1]])
 
         self.shape.transform(mat_y)
@@ -441,8 +440,8 @@ class App(tk.Tk):
         m,n,k=self.shape.center
         
         mat_z = np.array([
-            [cos(phi),sin(phi),0,0],
-            [-sin(phi),cos(phi),0,0],
+            [cos(phi),-sin(phi),0,-m * cos(phi) + n * sin(phi) + m],
+            [sin(phi),cos(phi),0,-m * sin(phi) - n * cos(phi) + n],
             [0,0,1,0],
             [0,0,0,1]])
 
