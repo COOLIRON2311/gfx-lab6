@@ -350,7 +350,6 @@ class App(tk.Tk):
             case ShapeType.Tetrahedron:
                 self.shape = Models.Tetrahedron()
                 self.__translate(event.x, event.y, 0)
-                self.shape.draw()
             case ShapeType.Octahedron:
                 self.shape = Models.Octahedron()
                 self.__translate(event.x, event.y, 0)
