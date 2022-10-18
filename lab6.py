@@ -307,6 +307,42 @@ class Models:
             ]
             super().__init__(polygons)
 
+    class Icosahedron(Polyhedron):
+        def __init__(self, size=100):
+            r = size
+            _bottom = []
+            for i in range(5):
+                angle = 2 * pi * i / 5
+                _bottom.append(Point(r * cos(angle), r * sin(angle), -r/2))
+
+            _top = []
+            for i in range(5):
+                angle = 2 * pi * i / 5 + pi / 5
+                _top.append(Point(r * cos(angle), r * sin(angle), r/2))
+
+            top = Polygon(_top)
+            bottom = Polygon(_bottom)
+
+            t = Line(_top[0], _top[1])
+            print()
+
+            polygons = [bottom, top]
+            
+            for i in range(5):
+                polygons.append(Polygon([_bottom[i], _top[i], _bottom[(i + 1) % 5]]))
+
+            bottom_p = bottom.center
+            top_p = top.center
+
+            bottom_p.z -= r / 2
+            top_p.z += r / 2
+
+            for i in range(5):
+                polygons.append(Polygon([_bottom[i], bottom_p, _bottom[(i + 1) % 5]]))
+                polygons.append(Polygon([_top[i], top_p, _top[(i + 1) % 5]]))
+
+            super().__init__(polygons)
+
 
 class App(tk.Tk):
     W: int = 1200
@@ -426,6 +462,7 @@ class App(tk.Tk):
         d = int(args[1])
         self.shape_type_idx = (self.shape_type_idx + d) % len(ShapeType)
         self.shape_type = ShapeType(self.shape_type_idx)
+        self.shape = None
         self.shapesbox.yview(*args)
 
     def _scroll2(self, *args):
@@ -473,9 +510,9 @@ class App(tk.Tk):
             case ShapeType.Hexahedron:
                 self.shape = Models.Hexahedron()
                 self.__translate(event.x, event.y, 0)
-            # case ShapeType.Icosahedron:
-            #     self.shape = Models.Icosahedron()
-            #     self.__translate(event.x, event.y, 0)
+            case ShapeType.Icosahedron:
+                self.shape = Models.Icosahedron()
+                self.__translate(event.x, event.y, 0)
             # case ShapeType.Dodecahedron:
             #     self.shape = Models.Dodecahedron()
             #     self.__translate(event.x, event.y, 0)
