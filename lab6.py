@@ -307,6 +307,59 @@ class Models:
             ]
             super().__init__(polygons)
 
+    class Icosahedron(Polyhedron):
+        def __init__(self, size=100):
+            r = size
+            _bottom = []
+            for i in range(5):
+                angle = 2 * pi * i / 5
+                _bottom.append(Point(r * cos(angle), r * sin(angle), -r/2))
+
+            _top = []
+            for i in range(5):
+                angle = 2 * pi * i / 5 + pi / 5
+                _top.append(Point(r * cos(angle), r * sin(angle), r/2))
+
+            top = Polygon(_top)
+            bottom = Polygon(_bottom)
+
+            t = Line(_top[0], _top[1])
+            print()
+
+            polygons = []
+
+            for i in range(5):
+                polygons.append(Polygon([_bottom[i], _top[i], _bottom[(i + 1) % 5]]))
+
+            for i in range(5):
+                polygons.append(Polygon([_top[i], _top[(i + 1) % 5], _bottom[(i + 1) % 5]]))
+
+            bottom_p = bottom.center
+            top_p = top.center
+
+            bottom_p.z -= r / 2
+            top_p.z += r / 2
+
+            for i in range(5):
+                polygons.append(Polygon([_bottom[i], bottom_p, _bottom[(i + 1) % 5]]))
+
+            for i in range(5):
+                polygons.append(Polygon([_top[i], top_p, _top[(i + 1) % 5]]))
+
+            super().__init__(polygons)
+
+    class Dodecahedron(Polyhedron):
+        def __init__(self, size=100):
+            t = Models.Icosahedron(size)
+            points = []
+            for polygon in t.polygons:
+                points.append(polygon.center)
+
+            # polygons = []
+            # for i in range(20):
+            #     polygons.append(Polygon([points[i % 20], points[(i + 1) % 20], points[(i + 2) % 20]]))
+            # super().__init__(polygons)
+            # TODO: fix this
 
 class App(tk.Tk):
     W: int = 1200
@@ -341,9 +394,9 @@ class App(tk.Tk):
         self.translateb = tk.Button(self.buttons, text="Смещение", command=self.translate)
         self.rotateb = tk.Button(self.buttons, text="Поворот", command=self.rotate)
         self.scaleb = tk.Button(self.buttons, text="Масштаб", command=self.scale)
-        self.phis = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="φ", command=self.phi_changed)
-        self.thetas = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="θ", command=self.theta_changed)
-        self.dists = tk.Scale(self.buttons, from_=1, to=self.W, orient=tk.HORIZONTAL, label="Расстояние", command=self.dist_changed)
+        self.phis = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="φ", command=self._phi_changed)
+        self.thetas = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="θ", command=self._theta_changed)
+        self.dists = tk.Scale(self.buttons, from_=1, to=self.W, orient=tk.HORIZONTAL, label="Расстояние", command=self._dist_changed)
 
         self.shapesbox = tk.Listbox(self.buttons, selectmode=tk.SINGLE, height=1, width=15)
         self.scroll1 = tk.Scrollbar(self.buttons, orient=tk.VERTICAL, command=self._scroll1)
@@ -394,9 +447,10 @@ class App(tk.Tk):
         self.canvas.bind("<Button-3>", self.r_click)
         self.bind("<Escape>", self.reset)
 
-    def reset(self, *_):
+    def reset(self, *_, del_shape=True):
         self.canvas.delete("all")
-        #self.shape = None
+        if del_shape:
+            self.shape = None
 
     #x_rotation
     def rotate_x(self):
@@ -482,6 +536,7 @@ class App(tk.Tk):
         d = int(args[1])
         self.shape_type_idx = (self.shape_type_idx + d) % len(ShapeType)
         self.shape_type = ShapeType(self.shape_type_idx)
+        self.shape = None
         self.shapesbox.yview(*args)
 
     def _scroll2(self, *args):
@@ -495,29 +550,31 @@ class App(tk.Tk):
         self.projection_idx = (self.projection_idx + d) % len(Projection)
         self.projection = Projection(self.projection_idx)
         self.projectionsbox.yview(*args)
-        self.reset()
+        self.reset(del_shape=False)
         self.shape.draw(self.canvas, self.projection)
 
-    def dist_changed(self, *_):
+    def _dist_changed(self, *_):
         App.dist = self.dists.get()
-        self.reset()
-        self.shape.draw(self.canvas, self.projection)
+        self.reset(del_shape=False)
+        if self.shape is not None:
+            self.shape.draw(self.canvas, self.projection)
 
-    def phi_changed(self, *_):
+    def _phi_changed(self, *_):
         App.phi = self.phis.get()
-        self.reset()
-        self.shape.draw(self.canvas, self.projection)
+        self.reset(del_shape=False)
+        if self.shape is not None:
+            self.shape.draw(self.canvas, self.projection)
 
-    def theta_changed(self, *_):
+    def _theta_changed(self, *_):
         App.theta = self.thetas.get()
-        self.reset()
-        self.shape.draw(self.canvas, self.projection)
+        self.reset(del_shape=False)
+        if self.shape is not None:
+            self.shape.draw(self.canvas, self.projection)
+
     def __translate(self, x, y, z):
         ...
 
     def l_click(self, event: tk.Event):
-        if self.shape is not None:
-            return
         self.reset()
         match self.shape_type:
             case ShapeType.Tetrahedron:
@@ -529,9 +586,9 @@ class App(tk.Tk):
             case ShapeType.Hexahedron:
                 self.shape = Models.Hexahedron()
                 self.__translate(event.x, event.y, 0)
-            # case ShapeType.Icosahedron:
-            #     self.shape = Models.Icosahedron()
-            #     self.__translate(event.x, event.y, 0)
+            case ShapeType.Icosahedron:
+                self.shape = Models.Icosahedron()
+                self.__translate(event.x, event.y, 0)
             # case ShapeType.Dodecahedron:
             #     self.shape = Models.Dodecahedron()
             #     self.__translate(event.x, event.y, 0)
