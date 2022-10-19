@@ -125,7 +125,7 @@ class Point(Shape):
             y = self.y
             z = self.z
         canvas.create_oval(x - 2, y - 2, x + 2, y + 2,
-                           fill="black")
+                           fill="white")
         return x, y, z
 
     def __iter__(self):
@@ -158,7 +158,7 @@ class Line(Shape):
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         p1X, p1Y, _ = self.p1.draw(canvas, projection)
         p2X, p2Y, _ = self.p2.draw(canvas, projection)
-        canvas.create_line(p1X, p1Y, p2X, p2Y, **kwargs)
+        canvas.create_line(p1X, p1Y, p2X, p2Y, **kwargs, fill="white")
 
     def transform(self, matrix: np.ndarray):
         self.p1.transform(matrix)
@@ -383,7 +383,7 @@ class App(tk.Tk):
         self.create_widgets()
 
     def create_widgets(self):
-        self.canvas = tk.Canvas(self, width=self.W, height=self.H - 75)
+        self.canvas = tk.Canvas(self, width=self.W, height=self.H - 75, bg="#393939")
         self.buttons = tk.Frame(self)
         self.translateb = tk.Button(
             self.buttons, text="Смещение", command=self.translate)
@@ -648,7 +648,7 @@ class App(tk.Tk):
 
             case Function.RotateAroundAxis:
                 m, n, k = self.shape.center
-                l = Line(Point(0,n,k),Point(m,n,k)) 
+                l = Line(Point(0,n,k),Point(m,n,k))
                 angle = 90 * (pi/180) # TODO: сделать выбор угла
                 dx,dy,dz = m/3,n/3,k/3
                 transmat = np.array([
@@ -657,7 +657,7 @@ class App(tk.Tk):
                     [0, 0, 1, -dz],
                     [0, 0, 0, 1]])
                 self.shape.transform(transmat)
-                
+
                 #TODO: сделать выбор осей
                 # mat = np.array([
                 #     [cos(angle), -sin(angle), 0, 0],
