@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from math import cos, pi, radians, sin
 from tkinter import simpledialog as sd
+from tkinter import messagebox as mb
 import numpy as np
 
 
@@ -587,14 +588,49 @@ class App(tk.Tk):
 
         self.shape.draw(self.canvas, self.projection)
 
-    def r_click(self, event: tk.Event):
+    def r_click(self, _: tk.Event):
         if self.shape is None:
             return
         match self.func:
             case Function.None_:
                 return
             case Function.ReflectOverPlane:
-                ...  # TODO: отражение относительно плоскости
+                # https://www.gatevidyalay.com/3d-reflection-in-computer-graphics-definition-examples/
+                inp = sd.askstring(
+                    "Отражение", "Введите плоскость отражения (н-р: XY):")
+                if inp is None:
+                    return
+                plane = ''.join(sorted(inp.strip().upper()))
+
+                mat_xy = np.array([
+                    [1, 0, 0, 0],
+                    [0, 1, 0, 0],
+                    [0, 0, -1, 0],
+                    [0, 0, 0, 1]])
+
+                mat_yz = np.array([
+                    [-1, 0, 0, 0],
+                    [0, 1, 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]])
+
+                mat_xz = np.array([
+                    [1, 0, 0, 0],
+                    [0, -1, 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]])
+                match plane:
+                    case 'XY':
+                        self.shape.transform(mat_xy)
+                    case 'YZ':
+                        self.shape.transform(mat_yz)
+                    case 'XZ':
+                        self.shape.transform(mat_xz)
+                    case _:
+                        mb.showerror("Ошибка", "Неверно указана плоскость")
+                self.reset(del_shape=False)
+                self.shape.draw(self.canvas, self.projection)
+
             case Function.ScaleAboutCenter:
                 inp = sd.askstring("Масштаб", "Введите коэффициенты масштабирования по осям x, y, z:")
                 if inp is None:
@@ -609,6 +645,7 @@ class App(tk.Tk):
                 self.shape.transform(mat)
                 self.reset(del_shape=False)
                 self.shape.draw(self.canvas, self.projection)
+
             case Function.RotateAroundAxis:
                 ...  # TODO: поворот относительно оси
             case Function.RotateAroundLine:
