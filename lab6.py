@@ -98,6 +98,11 @@ class Point(Shape):
     x: float
     y: float
     z: float
+    colors = ['#E52B50', '#FFBF00', '#9966CC', '#7FFFD4', '#007FFF',
+              '#7FFF00', '#8A2BE2', '#4B0082', '#FF00AF', '#800000',
+              '#FF7F00', '#FF4500', '#DA70D6', '#D1E231', '#1C39BB',
+              '#003153', '#E30B5C', '#C71585', '#FF2400', '#3F00FF']
+    col_idx = 0
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         if projection == Projection.Perspective:
@@ -123,7 +128,9 @@ class Point(Shape):
             x = self.x
             y = self.y
             z = self.z
-        canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="black")
+        Point.col_idx = (Point.col_idx + 1) % 20
+        canvas.create_oval(x - 2, y - 2, x + 2, y + 2,
+                           fill=Point.colors[Point.col_idx])
         return x, y, z
 
     def __iter__(self):
@@ -189,7 +196,8 @@ class Polygon(Shape):
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         ln = len(self.points)
-        lines = [Line(self.points[i], self.points[(i + 1) % ln]) for i in range(ln)]
+        lines = [Line(self.points[i], self.points[(i + 1) % ln])
+                 for i in range(ln)]
         for line in lines:
             line.draw(canvas, projection)
 
@@ -324,12 +332,6 @@ class Models:
 
             polygons = []
 
-            for i in range(5):
-                polygons.append(Polygon([_bottom[i], _top[i], _bottom[(i + 1) % 5]]))
-
-            for i in range(5):
-                polygons.append(Polygon([_top[i], _top[(i + 1) % 5], _bottom[(i + 1) % 5]]))
-
             bottom_p = bottom.center
             top_p = top.center
 
@@ -337,7 +339,16 @@ class Models:
             top_p.z += r / 2
 
             for i in range(5):
-                polygons.append(Polygon([_bottom[i], bottom_p, _bottom[(i + 1) % 5]]))
+                polygons.append(
+                    Polygon([_bottom[i], bottom_p, _bottom[(i + 1) % 5]]))
+
+            for i in range(5):
+                polygons.append(
+                    Polygon([_bottom[i], _top[i], _bottom[(i + 1) % 5]]))
+
+            for i in range(5):
+                polygons.append(
+                    Polygon([_top[i], _top[(i + 1) % 5], _bottom[(i + 1) % 5]]))
 
             for i in range(5):
                 polygons.append(Polygon([_top[i], top_p, _top[(i + 1) % 5]]))
@@ -350,7 +361,23 @@ class Models:
             points = []
             for polygon in t.polygons:
                 points.append(polygon.center)
-            super().__init__([Polygon([point]) for point in points])
+            p = points
+            polygons = [
+                Polygon([point]) for point in points
+            ]
+            polygons.append(Polygon([p[0], p[1], p[2], p[3], p[4]]))
+            polygons.append(Polygon([p[0], p[4], p[9], p[14], p[5]]))
+            polygons.append(Polygon([p[0], p[5], p[10], p[6], p[1]]))
+            polygons.append(Polygon([p[1], p[2], p[7], p[11], p[6]]))
+            polygons.append(Polygon([p[2], p[3], p[8], p[12], p[7]]))
+            polygons.append(Polygon([p[3], p[8], p[13], p[9], p[4]]))
+            polygons.append(Polygon([p[5], p[14], p[19], p[15], p[10]]))
+            polygons.append(Polygon([p[6], p[11], p[16], p[15], p[10]]))
+            polygons.append(Polygon([p[7], p[12], p[17], p[16], p[11]]))
+            polygons.append(Polygon([p[8], p[13], p[18], p[17], p[12]]))
+            polygons.append(Polygon([p[9], p[14], p[19], p[18], p[13]]))
+            polygons.append(Polygon([p[15], p[16], p[17], p[18], p[19]]))
+            super().__init__(polygons)
 
             # polygons = []
             # for i in range(20):
@@ -378,32 +405,42 @@ class App(tk.Tk):
         self.title("ManualCAD 3D")
         self.resizable(0, 0)
         self.geometry(f"{self.W}x{self.H}")
-        self.shape_type_idx = 0
+        self.shape_type_idx = 4
         self.shape_type = ShapeType(self.shape_type_idx)
         self.func_idx = 0
         self.func = Function(self.func_idx)
-        self.projection_idx = 0
+        self.projection_idx = 1
         self.projection = Projection(self.projection_idx)
         self.create_widgets()
 
     def create_widgets(self):
         self.canvas = tk.Canvas(self, width=self.W, height=self.H - 75)
         self.buttons = tk.Frame(self)
-        self.translateb = tk.Button(self.buttons, text="Смещение", command=self.translate)
-        self.rotateb = tk.Button(self.buttons, text="Поворот", command=self.rotate)
-        self.scaleb = tk.Button(self.buttons, text="Масштаб", command=self.scale)
-        self.phis = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL, label="φ", command=self._phi_changed)
+        self.translateb = tk.Button(
+            self.buttons, text="Смещение", command=self.translate)
+        self.rotateb = tk.Button(
+            self.buttons, text="Поворот", command=self.rotate)
+        self.scaleb = tk.Button(
+            self.buttons, text="Масштаб", command=self.scale)
+        self.phis = tk.Scale(self.buttons, from_=0, to=360,
+                             orient=tk.HORIZONTAL, label="φ", command=self._phi_changed)
         self.thetas = tk.Scale(self.buttons, from_=0, to=360, orient=tk.HORIZONTAL,
                                label="θ", command=self._theta_changed)
         self.dists = tk.Scale(self.buttons, from_=1, to=self.W, orient=tk.HORIZONTAL,
                               label="Расстояние", command=self._dist_changed)
 
-        self.shapesbox = tk.Listbox(self.buttons, selectmode=tk.SINGLE, height=1, width=15)
-        self.scroll1 = tk.Scrollbar(self.buttons, orient=tk.VERTICAL, command=self._scroll1)
-        self.funcsbox = tk.Listbox(self.buttons, selectmode=tk.SINGLE, height=1, width=40)
-        self.scroll2 = tk.Scrollbar(self.buttons, orient=tk.VERTICAL, command=self._scroll2)
-        self.projectionsbox = tk.Listbox(self.buttons, selectmode=tk.SINGLE, height=1, width=20)
-        self.scroll3 = tk.Scrollbar(self.buttons, orient=tk.VERTICAL, command=self._scroll3)
+        self.shapesbox = tk.Listbox(
+            self.buttons, selectmode=tk.SINGLE, height=1, width=15)
+        self.scroll1 = tk.Scrollbar(
+            self.buttons, orient=tk.VERTICAL, command=self._scroll1)
+        self.funcsbox = tk.Listbox(
+            self.buttons, selectmode=tk.SINGLE, height=1, width=40)
+        self.scroll2 = tk.Scrollbar(
+            self.buttons, orient=tk.VERTICAL, command=self._scroll2)
+        self.projectionsbox = tk.Listbox(
+            self.buttons, selectmode=tk.SINGLE, height=1, width=20)
+        self.scroll3 = tk.Scrollbar(
+            self.buttons, orient=tk.VERTICAL, command=self._scroll3)
 
         self.canvas.pack()
         self.canvas.config(cursor="cross")
@@ -453,7 +490,8 @@ class App(tk.Tk):
             self.shape = None
 
     def rotate(self):
-        inp = sd.askstring("Поворот", "Введите угол поворота в градусах по x, y, z:")
+        inp = sd.askstring(
+            "Поворот", "Введите угол поворота в градусах по x, y, z:")
         if inp is None:
             return
         phi, theta, psi = map(radians, map(float, inp.split(', ')))
@@ -485,7 +523,8 @@ class App(tk.Tk):
         self.shape.draw(self.canvas, self.projection)
 
     def scale(self):
-        inp = sd.askstring("Масштаб", "Введите коэффициенты масштабирования по осям x, y, z:")
+        inp = sd.askstring(
+            "Масштаб", "Введите коэффициенты масштабирования по осям x, y, z:")
         if inp is None:
             return
         sx, sy, sz = map(float, inp.split(','))
@@ -501,7 +540,8 @@ class App(tk.Tk):
         self.shape.draw(self.canvas, self.projection)
 
     def translate(self):
-        inp = sd.askstring("Смещение", "Введите вектор смещения по осям x, y, z:")
+        inp = sd.askstring(
+            "Смещение", "Введите вектор смещения по осям x, y, z:")
         if inp is None:
             return
         dx, dy, dz = map(float, inp.split(','))
