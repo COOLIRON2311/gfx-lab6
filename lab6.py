@@ -1,8 +1,7 @@
 import tkinter as tk
 from dataclasses import dataclass
 from enum import Enum
-from math import cos, pi, radians, sin, tan
-from tkinter import messagebox as mb
+from math import cos, pi, radians, sin
 from tkinter import simpledialog as sd
 import numpy as np
 
@@ -323,9 +322,6 @@ class Models:
             top = Polygon(_top)
             bottom = Polygon(_bottom)
 
-            t = Line(_top[0], _top[1])
-            print()
-
             polygons = []
 
             for i in range(5):
@@ -354,6 +350,7 @@ class Models:
             points = []
             for polygon in t.polygons:
                 points.append(polygon.center)
+            super().__init__([Polygon([point]) for point in points])
 
             # polygons = []
             # for i in range(20):
@@ -465,7 +462,7 @@ class App(tk.Tk):
         # TODO: какая-то хуйня с поворотом
         mat_x = np.array([
             [1, 0, 0, 0],
-            [0, cos(phi), sin(phi), -k * cos(phi) - n * cos(phi) + n],
+            [0, cos(phi), sin(phi), -k * sin(phi) - n * cos(phi) + n],
             [0, -sin(phi), cos(phi), -k * cos(phi) + n * sin(phi) + k],
             [0, 0, 0, 1]])
 
@@ -518,25 +515,38 @@ class App(tk.Tk):
         self.shape.draw(self.canvas, self.projection)
 
     def _scroll1(self, *args):
-        d = int(args[1])
-        self.shape_type_idx = (self.shape_type_idx + d) % len(ShapeType)
-        self.shape_type = ShapeType(self.shape_type_idx)
-        self.shape = None
-        self.shapesbox.yview(*args)
+        try:
+            d = int(args[1])
+        except ValueError:
+            return
+        if 0 <= self.shape_type_idx + d < len(ShapeType):
+            self.shape_type_idx += d
+            self.shape_type = ShapeType(self.shape_type_idx)
+            self.shape = None
+            self.shapesbox.yview(*args)
 
     def _scroll2(self, *args):
-        d = int(args[1])
-        self.func_idx = (self.func_idx + d) % len(Function)
-        self.func = Function(self.func_idx)
-        self.funcsbox.yview(*args)
+        try:
+            d = int(args[1])
+        except ValueError:
+            return
+        if 0 <= self.func_idx + d < len(Function):
+            self.func_idx += d
+            self.func = Function(self.func_idx)
+            self.funcsbox.yview(*args)
 
     def _scroll3(self, *args):
-        d = int(args[1])
-        self.projection_idx = (self.projection_idx + d) % len(Projection)
-        self.projection = Projection(self.projection_idx)
-        self.projectionsbox.yview(*args)
-        self.reset(del_shape=False)
-        self.shape.draw(self.canvas, self.projection)
+        try:
+            d = int(args[1])
+        except ValueError:
+            return
+        if 0 <= self.projection_idx + d < len(Projection):
+            self.projection_idx += d
+            self.projection = Projection(self.projection_idx)
+            self.projectionsbox.yview(*args)
+            self.reset(del_shape=False)
+            if self.shape is not None:
+                self.shape.draw(self.canvas, self.projection)
 
     def _dist_changed(self, *_):
         App.dist = self.dists.get()
@@ -556,27 +566,20 @@ class App(tk.Tk):
         if self.shape is not None:
             self.shape.draw(self.canvas, self.projection)
 
-    def __translate(self, x, y, z):
-        ...
-
-    def l_click(self, event: tk.Event):
+    def l_click(self, _: tk.Event):
         self.reset()
         match self.shape_type:
             case ShapeType.Tetrahedron:
                 self.shape = Models.Tetrahedron()
-                self.__translate(event.x, event.y, 0)
             case ShapeType.Octahedron:
                 self.shape = Models.Octahedron()
-                self.__translate(event.x, event.y, 0)
             case ShapeType.Hexahedron:
                 self.shape = Models.Hexahedron()
-                self.__translate(event.x, event.y, 0)
             case ShapeType.Icosahedron:
                 self.shape = Models.Icosahedron()
-                self.__translate(event.x, event.y, 0)
-            # case ShapeType.Dodecahedron:
-            #     self.shape = Models.Dodecahedron()
-            #     self.__translate(event.x, event.y, 0)
+            case ShapeType.Dodecahedron:
+                self.shape = Models.Dodecahedron()
+
         self.shape.draw(self.canvas, self.projection)
 
     def r_click(self, event: tk.Event):
