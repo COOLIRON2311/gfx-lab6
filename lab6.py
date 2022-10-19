@@ -459,7 +459,6 @@ class App(tk.Tk):
         phi, theta, psi = map(radians, map(float, inp.split(', ')))
         m, n, k = self.shape.center
 
-        # TODO: какая-то хуйня с поворотом
         mat_x = np.array([
             [1, 0, 0, 0],
             [0, cos(phi), sin(phi), -k * sin(phi) - n * cos(phi) + n],
@@ -489,12 +488,10 @@ class App(tk.Tk):
         if inp is None:
             return
         sx, sy, sz = map(float, inp.split(','))
-        m, n, k = self.shape.center
-        # TODO: сделать масштабирование
         mat = np.array([
-            [sx, 0, 0, -m*sx+m],
-            [0, sy, 0, -n*sy+n],
-            [0, 0, sz, -k*sz+k],
+            [sx, 0, 0, 0],
+            [0, sy, 0, 0],
+            [0, 0, sz, 0],
             [0, 0, 0, 1]])
         self.shape.transform(mat)
         self.reset(del_shape=False)
@@ -591,7 +588,19 @@ class App(tk.Tk):
             case Function.ReflectOverPlane:
                 ...  # TODO: отражение относительно плоскости
             case Function.ScaleAboutCenter:
-                ...  # TODO: масштабирование относительно центра
+                inp = sd.askstring("Масштаб", "Введите коэффициенты масштабирования по осям x, y, z:")
+                if inp is None:
+                    return
+                sx, sy, sz = map(float, inp.split(','))
+                m, n, k = self.shape.center
+                mat = np.array([
+                    [sx, 0, 0, -m*sx+m],
+                    [0, sy, 0, -n*sy+n],
+                    [0, 0, sz, -k*sz+k],
+                    [0, 0, 0, 1]])
+                self.shape.transform(mat)
+                self.reset(del_shape=False)
+                self.shape.draw(self.canvas, self.projection)
             case Function.RotateAroundAxis:
                 ...  # TODO: поворот относительно оси
             case Function.RotateAroundLine:
