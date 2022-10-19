@@ -105,7 +105,7 @@ class Point(Shape):
             # print(App.dist)
             x = self.x / (1 - self.z / App.dist) + 450
             y = self.y / (1 - self.z / App.dist) + 250
-            z = self.z + 100
+            z = self.z
         elif projection == Projection.Axonometric:
             #print(App.phi, App.theta)
             phi = App.phi*(pi/180)
@@ -647,7 +647,42 @@ class App(tk.Tk):
                 self.shape.draw(self.canvas, self.projection)
 
             case Function.RotateAroundAxis:
-                ...  # TODO: поворот относительно оси
+                m, n, k = self.shape.center
+                l = Line(Point(0,n,k),Point(m,n,k)) 
+                angle = 90 * (pi/180) # TODO: сделать выбор угла
+                dx,dy,dz = m/3,n/3,k/3
+                transmat = np.array([
+                    [1, 0, 0, -dx],
+                    [0, 1, 0, -dy],
+                    [0, 0, 1, -dz],
+                    [0, 0, 0, 1]])
+                self.shape.transform(transmat)
+                
+                #TODO: сделать выбор осей
+                # mat = np.array([
+                #     [cos(angle), -sin(angle), 0, 0],
+                #     [sin(angle), cos(angle), 0, 0],
+                #     [0, 0, 1, 0],
+                #     [0, 0, 0, 1]]) # вразение вокруг оси z
+                # mat = np.array([
+                #     [cos(angle), 0,sin(angle), 0],
+                #     [0, 1, 0, 0],
+                #     [-sin(angle), 0, cos(angle), 0],
+                #     [0, 0, 0, 1]]) # вразение вокруг оси y
+                mat = np.array([
+                    [1, 0, 0, 0],
+                    [0, cos(angle), -sin(angle), 0],
+                    [0, sin(angle), cos(angle), 0],
+                    [m, n, k, 1]]) # вразение вокруг оси x
+                self.shape.transform(mat)
+                transmat = np.array([
+                    [1, 0, 0, dx],
+                    [0, 1, 0, dy],
+                    [0, 0, 1, dz],
+                    [0, 0, 0, 1]])
+                self.shape.transform(transmat)
+                self.reset(del_shape=False)
+                self.shape.draw(self.canvas, self.projection)
             case Function.RotateAroundLine:
                 ...  # TODO: поворот относительно прямой
 
