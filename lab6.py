@@ -98,11 +98,6 @@ class Point(Shape):
     x: float
     y: float
     z: float
-    colors = ['#E52B50', '#FFBF00', '#9966CC', '#7FFFD4', '#007FFF',
-              '#7FFF00', '#8A2BE2', '#4B0082', '#FF00AF', '#800000',
-              '#FF7F00', '#FF4500', '#DA70D6', '#D1E231', '#1C39BB',
-              '#003153', '#E30B5C', '#C71585', '#FF2400', '#3F00FF']
-    col_idx = 0
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         if projection == Projection.Perspective:
@@ -128,22 +123,14 @@ class Point(Shape):
             x = self.x
             y = self.y
             z = self.z
-        Point.col_idx = (Point.col_idx + 1) % 20
         canvas.create_oval(x - 2, y - 2, x + 2, y + 2,
-                           fill=Point.colors[Point.col_idx])
+                           fill="black")
         return x, y, z
 
     def __iter__(self):
         yield self.x
         yield self.y
         yield self.z
-
-    # def in_rect(self, p1: "Point", p2: "Point") -> bool:
-    #     maxx = max(p1.x, p2.x)
-    #     minx = min(p1.x, p2.x)
-    #     maxy = max(p1.y, p2.y)
-    #     miny = min(p1.y, p2.y)
-    #     return minx <= self.x <= maxx and miny <= self.y <= maxy
 
     def transform(self, matrix: np.ndarray):
         p = np.array([self.x, self.y, self.z, 1])
@@ -168,13 +155,9 @@ class Line(Shape):
     p2: Point
 
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
-        p1X, p1Y, z = self.p1.draw(canvas, projection)
-        p2X, p2Y, z = self.p2.draw(canvas, projection)
+        p1X, p1Y, _ = self.p1.draw(canvas, projection)
+        p2X, p2Y, _ = self.p2.draw(canvas, projection)
         canvas.create_line(p1X, p1Y, p2X, p2Y, **kwargs)
-
-    # def in_rect(self, p1: Point, p2: Point) -> bool:
-    #     """Проверка, что линия пересекает прямоугольник"""
-    #     return all((self.p1.in_rect(p1, p2), self.p2.in_rect(p1, p2)))
 
     def transform(self, matrix: np.ndarray):
         self.p1.transform(matrix)
@@ -201,10 +184,6 @@ class Polygon(Shape):
         for line in lines:
             line.draw(canvas, projection)
 
-    # def in_rect(self, p1: Point, p2: Point) -> bool:
-    #     """Проверка, что полигон пересекает прямоугольник"""
-    #     return all((point.in_rect(p1, p2) for point in self.points))
-
     def transform(self, matrix: np.ndarray):
         for point in self.points:
             point.transform(matrix)
@@ -227,10 +206,6 @@ class Polyhedron(Shape):
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         for poly in self.polygons:
             poly.draw(canvas, projection)
-
-    # def in_rect(self, p1: Point, p2: Point) -> bool:
-    #     """Проверка, что многогранник пересекает прямоугольник"""
-    #     return all((polygon.in_rect(p1, p2) for polygon in self.polygons))
 
     def transform(self, matrix: np.ndarray):
         for polygon in self.polygons:
@@ -363,27 +338,20 @@ class Models:
                 points.append(polygon.center)
             p = points
             polygons = [
-                Polygon([point]) for point in points
+                Polygon([p[0], p[1], p[2], p[3], p[4]]),
+                Polygon([p[0], p[4], p[9], p[14], p[5]]),
+                Polygon([p[0], p[5], p[10], p[6], p[1]]),
+                Polygon([p[1], p[2], p[7], p[11], p[6]]),
+                Polygon([p[2], p[3], p[8], p[12], p[7]]),
+                Polygon([p[3], p[8], p[13], p[9], p[4]]),
+                Polygon([p[5], p[14], p[19], p[15], p[10]]),
+                Polygon([p[6], p[11], p[16], p[15], p[10]]),
+                Polygon([p[7], p[12], p[17], p[16], p[11]]),
+                Polygon([p[8], p[13], p[18], p[17], p[12]]),
+                Polygon([p[9], p[14], p[19], p[18], p[13]]),
+                Polygon([p[15], p[16], p[17], p[18], p[19]])
             ]
-            polygons.append(Polygon([p[0], p[1], p[2], p[3], p[4]]))
-            polygons.append(Polygon([p[0], p[4], p[9], p[14], p[5]]))
-            polygons.append(Polygon([p[0], p[5], p[10], p[6], p[1]]))
-            polygons.append(Polygon([p[1], p[2], p[7], p[11], p[6]]))
-            polygons.append(Polygon([p[2], p[3], p[8], p[12], p[7]]))
-            polygons.append(Polygon([p[3], p[8], p[13], p[9], p[4]]))
-            polygons.append(Polygon([p[5], p[14], p[19], p[15], p[10]]))
-            polygons.append(Polygon([p[6], p[11], p[16], p[15], p[10]]))
-            polygons.append(Polygon([p[7], p[12], p[17], p[16], p[11]]))
-            polygons.append(Polygon([p[8], p[13], p[18], p[17], p[12]]))
-            polygons.append(Polygon([p[9], p[14], p[19], p[18], p[13]]))
-            polygons.append(Polygon([p[15], p[16], p[17], p[18], p[19]]))
             super().__init__(polygons)
-
-            # polygons = []
-            # for i in range(20):
-            #     polygons.append(Polygon([points[i % 20], points[(i + 1) % 20], points[(i + 2) % 20]]))
-            # super().__init__(polygons)
-            # TODO: fix this
 
 
 class App(tk.Tk):
@@ -405,11 +373,11 @@ class App(tk.Tk):
         self.title("ManualCAD 3D")
         self.resizable(0, 0)
         self.geometry(f"{self.W}x{self.H}")
-        self.shape_type_idx = 4
+        self.shape_type_idx = 0
         self.shape_type = ShapeType(self.shape_type_idx)
         self.func_idx = 0
         self.func = Function(self.func_idx)
-        self.projection_idx = 1
+        self.projection_idx = 0
         self.projection = Projection(self.projection_idx)
         self.create_widgets()
 
