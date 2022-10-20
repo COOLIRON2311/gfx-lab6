@@ -671,36 +671,39 @@ class App(tk.Tk):
 
                 dx, dy, dz = m, n, k
                 mat_back = np.array([
-                    [1, 0, 0, -dx],
-                    [0, 1, 0, 0],
-                    [0, 0, 1, 0],
+                    [1, 0, 0, -m],
+                    [0, 1, 0, -n],
+                    [0, 0, 1, -k],
                     [0, 0, 0, 1]])
                 print(self.shape.center)
                 self.shape.transform(mat_back)
                 print(self.shape.center)
 
-                # TODO: сделать выбор осей
-                # mat = np.array([
-                #     [cos(angle), -sin(angle), 0, 0],
-                #     [sin(angle), cos(angle), 0, 0],
-                #     [0, 0, 1, 0],
-                #     [0, 0, 0, 1]]) # вразение вокруг оси z
-                # mat = np.array([
-                #     [cos(angle), 0,sin(angle), 0],
-                #     [0, 1, 0, 0],
-                #     [-sin(angle), 0, cos(angle), 0],
-                #     [0, 0, 0, 1]]) # вразение вокруг оси y
-                # mat = np.array([
-                #     [1, 0, 0, 0],
-                #     [0, cos(angle), -sin(angle), 0],
-                #     [0, sin(angle), cos(angle), 0],
-                #     [m, n, k, 1]]) # вразение вокруг оси x
+                match axis:
+                    case 'X':
+                        mat = np.array([
+                            [1, 0, 0, 0],
+                            [0, cos(angle), -sin(angle), 0],
+                            [0, sin(angle), cos(angle), 0],
+                            [0, 0, 0, 1]]) # вразение вокруг оси x
+                    case 'Z':
+                        mat = np.array([
+                            [cos(angle), -sin(angle), 0, 0],
+                            [sin(angle), cos(angle), 0, 0],
+                            [0, 0, 1, 0],
+                            [0, 0, 0, 1]]) # вразение вокруг оси z
+                    case 'Y':
+                        mat = np.array([
+                            [cos(angle), 0,sin(angle), 0],
+                            [0, 1, 0, 0],
+                            [-sin(angle), 0, cos(angle), 0],
+                            [0, 0, 0, 1]]) # вразение вокруг оси y
 
-                # self.shape.transform(mat)
+                self.shape.transform(mat)
                 mat_fwd = np.array([
-                    [1, 0, 0, dx],
-                    [0, 1, 0, dy],
-                    [0, 0, 1, dz],
+                    [1, 0, 0, m],
+                    [0, 1, 0, n],
+                    [0, 0, 1, k],
                     [0, 0, 0, 1]])
                 self.shape.transform(mat_fwd)
                 self.reset(del_shape=False)
