@@ -100,6 +100,14 @@ class Point(Shape):
     y: float
     z: float
 
+    def __hash__(self) -> int:
+        return hash((self.x, self.y, self.z))
+
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, Point):
+            return self.x == __o.x and self.y == __o.y and self.z == __o.z
+        return False
+
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         if projection == Projection.Perspective:
             # print(App.dist)
@@ -209,8 +217,9 @@ class Polyhedron(Shape):
             poly.draw(canvas, projection)
 
     def transform(self, matrix: np.ndarray):
-        for polygon in self.polygons:
-            polygon.transform(matrix)
+        points = {point for poly in self.polygons for point in poly.points}
+        for point in points:
+            point.transform(matrix)
 
     def highlight(self, canvas: tk.Canvas, timeout: int = 200, r: int = 5):
         for polygon in self.polygons:
@@ -516,7 +525,9 @@ class App(tk.Tk):
             [0, 1, 0, dy],
             [0, 0, 1, dz],
             [0, 0, 0, 1]])
+        print(self.shape.center)
         self.shape.transform(mat)
+        print(self.shape.center)
         self.reset(del_shape=False)
         self.shape.draw(self.canvas, self.projection)
 
@@ -648,17 +659,27 @@ class App(tk.Tk):
 
             case Function.RotateAroundAxis:
                 m, n, k = self.shape.center
-                l = Line(Point(0,n,k),Point(m,n,k))
-                angle = 90 * (pi/180) # TODO: сделать выбор угла
-                dx,dy,dz = m/3,n/3,k/3
-                transmat = np.array([
-                    [1, 0, 0, -dx],
-                    [0, 1, 0, -dy],
-                    [0, 0, 1, -dz],
-                    [0, 0, 0, 1]])
-                self.shape.transform(transmat)
+                inp = sd.askstring("Поворот", "Введите ось вращения (н-р: X), угол в градусах:")
+                if inp is None:
+                    return
+                try:
+                    axis, angle = inp.split(',')
+                    axis = axis.strip().upper()
+                    angle = radians(float(angle))
+                except ValueError:
+                    mb.showerror("Ошибка", "Неверно указаны ось и угол")
 
-                #TODO: сделать выбор осей
+                dx, dy, dz = m, n, k
+                mat_back = np.array([
+                    [1, 0, 0, -dx],
+                    [0, 1, 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]])
+                print(self.shape.center)
+                self.shape.transform(mat_back)
+                print(self.shape.center)
+
+                # TODO: сделать выбор осей
                 # mat = np.array([
                 #     [cos(angle), -sin(angle), 0, 0],
                 #     [sin(angle), cos(angle), 0, 0],
@@ -669,18 +690,19 @@ class App(tk.Tk):
                 #     [0, 1, 0, 0],
                 #     [-sin(angle), 0, cos(angle), 0],
                 #     [0, 0, 0, 1]]) # вразение вокруг оси y
-                mat = np.array([
-                    [1, 0, 0, 0],
-                    [0, cos(angle), -sin(angle), 0],
-                    [0, sin(angle), cos(angle), 0],
-                    [m, n, k, 1]]) # вразение вокруг оси x
-                self.shape.transform(mat)
-                transmat = np.array([
+                # mat = np.array([
+                #     [1, 0, 0, 0],
+                #     [0, cos(angle), -sin(angle), 0],
+                #     [0, sin(angle), cos(angle), 0],
+                #     [m, n, k, 1]]) # вразение вокруг оси x
+
+                # self.shape.transform(mat)
+                mat_fwd = np.array([
                     [1, 0, 0, dx],
                     [0, 1, 0, dy],
                     [0, 0, 1, dz],
                     [0, 0, 0, 1]])
-                self.shape.transform(transmat)
+                self.shape.transform(mat_fwd)
                 self.reset(del_shape=False)
                 self.shape.draw(self.canvas, self.projection)
             case Function.RotateAroundLine:
