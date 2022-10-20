@@ -525,9 +525,7 @@ class App(tk.Tk):
             [0, 1, 0, dy],
             [0, 0, 1, dz],
             [0, 0, 0, 1]])
-        print(self.shape.center)
         self.shape.transform(mat)
-        print(self.shape.center)
         self.reset(del_shape=False)
         self.shape.draw(self.canvas, self.projection)
 
@@ -663,41 +661,39 @@ class App(tk.Tk):
                 if inp is None:
                     return
                 try:
-                    axis, angle = inp.split(',')
+                    axis, phi = inp.split(',')
                     axis = axis.strip().upper()
-                    angle = radians(float(angle))
+                    phi = radians(float(phi))
                 except ValueError:
                     mb.showerror("Ошибка", "Неверно указаны ось и угол")
+                    return
 
-                dx, dy, dz = m, n, k
                 mat_back = np.array([
                     [1, 0, 0, -m],
                     [0, 1, 0, -n],
                     [0, 0, 1, -k],
                     [0, 0, 0, 1]])
-                print(self.shape.center)
                 self.shape.transform(mat_back)
-                print(self.shape.center)
 
                 match axis:
                     case 'X':
                         mat = np.array([
                             [1, 0, 0, 0],
-                            [0, cos(angle), -sin(angle), 0],
-                            [0, sin(angle), cos(angle), 0],
-                            [0, 0, 0, 1]]) # вразение вокруг оси x
+                            [0, cos(phi), -sin(phi), 0],
+                            [0, sin(phi), cos(phi), 0],
+                            [0, 0, 0, 1]])  # вращение вокруг оси x
                     case 'Z':
                         mat = np.array([
-                            [cos(angle), -sin(angle), 0, 0],
-                            [sin(angle), cos(angle), 0, 0],
+                            [cos(phi), -sin(phi), 0, 0],
+                            [sin(phi), cos(phi), 0, 0],
                             [0, 0, 1, 0],
-                            [0, 0, 0, 1]]) # вразение вокруг оси z
+                            [0, 0, 0, 1]])  # вращение вокруг оси z
                     case 'Y':
                         mat = np.array([
-                            [cos(angle), 0,sin(angle), 0],
+                            [cos(phi), 0, sin(phi), 0],
                             [0, 1, 0, 0],
-                            [-sin(angle), 0, cos(angle), 0],
-                            [0, 0, 0, 1]]) # вразение вокруг оси y
+                            [-sin(phi), 0, cos(phi), 0],
+                            [0, 0, 0, 1]])  # вращение вокруг оси y
 
                 self.shape.transform(mat)
                 mat_fwd = np.array([
@@ -709,7 +705,42 @@ class App(tk.Tk):
                 self.reset(del_shape=False)
                 self.shape.draw(self.canvas, self.projection)
             case Function.RotateAroundLine:
-                ...  # TODO: поворот относительно прямой
+                inp = sd.askstring("Поворот", "Введите координаты начала и конца линии в формате x1, y1, z1, x2, y2, z2, угол в градусах:")
+                if inp is None:
+                    return
+                try:
+                    a, b, c, x, y, z, phi = map(float, inp.split(','))
+                    phi = radians(phi)
+                except ValueError:
+                    mb.showerror("Ошибка", "Неверно указаны координаты начала и конца линии")
+                    return
+
+                # TODO: реализовать поворот вокруг произвольной линии
+
+                mat_back = np.array([
+                    [1, 0, 0, -a],
+                    [0, 1, 0, -b],
+                    [0, 0, 1, -c],
+                    [0, 0, 0, 1]])
+
+                mat_rot = np.array([
+                    [cos(phi) + (1 - cos(phi)) * x ** 2, (1 - cos(phi)) * x * y - sin(phi)*z, (1 - cos(phi)) * x * z + sin(phi)*y, 0],
+                    [(1 - cos(phi)) * x * y + sin(phi)*z, cos(phi) + (1 - cos(phi)) * y ** 2, (1 - cos(phi)) * y * z - sin(phi)*x, 0],
+                    [(1 - cos(phi)) * z * x - sin(phi)*y, (1 - cos(phi)) * z * y + sin(phi)*x, cos(phi) + (1 - cos(phi)) * z ** 2, 0],
+                    [0, 0, 0, 1]
+                ]) # 0, 0, 150, 120, 300, -50, 90
+
+                mat_fwd = np.array([
+                    [1, 0, 0, a],
+                    [0, 1, 0, b],
+                    [0, 0, 1, c],
+                    [0, 0, 0, 1]])
+
+                self.shape.transform(mat_back)
+                self.shape.transform(mat_rot)
+                self.shape.transform(mat_fwd)
+                self.reset(del_shape=False)
+                self.shape.draw(self.canvas, self.projection)
 
     def run(self):
         self.mainloop()
