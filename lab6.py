@@ -715,12 +715,10 @@ class App(tk.Tk):
                     mb.showerror("Ошибка", "Неверно указаны координаты начала и конца линии")
                     return
 
-
-                d = np.sqrt(x**2+y**2+z**2)
-                x = x/d
-                y = y/d
-                z = z/d
-                # TODO: реализовать поворот вокруг произвольной линии
+                d = np.linalg.norm([x, y, z])
+                x = x / d
+                y = y / d
+                z = z / d
 
                 mat_back = np.array([
                     [1, 0, 0, -a],
@@ -733,7 +731,7 @@ class App(tk.Tk):
                     [(1 - cos(phi)) * x * y + sin(phi)*z, cos(phi) + (1 - cos(phi)) * y ** 2, (1 - cos(phi)) * y * z - sin(phi)*x, 0],
                     [(1 - cos(phi)) * z * x - sin(phi)*y, (1 - cos(phi)) * z * y + sin(phi)*x, cos(phi) + (1 - cos(phi)) * z ** 2, 0],
                     [0, 0, 0, 1]
-                ]) # 0, 0, 150, 120, 300, -50, 90
+                ])  # 0, 0, 150, 120, 300, -50, 90
 
                 mat_fwd = np.array([
                     [1, 0, 0, a],
