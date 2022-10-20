@@ -715,6 +715,11 @@ class App(tk.Tk):
                     mb.showerror("Ошибка", "Неверно указаны координаты начала и конца линии")
                     return
 
+
+                d = np.sqrt(x**2+y**2+z**2)
+                x = x/d
+                y = y/d
+                z = z/d
                 # TODO: реализовать поворот вокруг произвольной линии
 
                 mat_back = np.array([
