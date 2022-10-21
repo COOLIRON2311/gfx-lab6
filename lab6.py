@@ -111,9 +111,16 @@ class Point(Shape):
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         if projection == Projection.Perspective:
             # print(App.dist)
-            x = self.x / (1 - self.z / App.dist) + 450
-            y = self.y / (1 - self.z / App.dist) + 250
-            z = self.z
+            per = np.array([
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, -1 / App.dist],
+                [0, 0, 0, 1]])
+            coor = np.array([self.x, self.y, self.z, 1])
+            res = np.matmul(coor, per)
+            x = res[0]/res[3] + 450
+            y = res[1]/res[3] + 250
+            z = res[2]/res[3]
         elif projection == Projection.Axonometric:
             #print(App.phi, App.theta)
             phi = App.phi*(pi/180)
