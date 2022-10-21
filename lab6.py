@@ -484,27 +484,40 @@ class App(tk.Tk):
         phi, theta, psi = map(radians, map(float, inp.split(', ')))
         m, n, k = self.shape.center
 
+        mat_back = np.array([
+            [1, 0, 0, -m],
+            [0, 1, 0, -n],
+            [0, 0, 1, -k],
+            [0, 0, 0, 1]
+        ])
+
         mat_x = np.array([
             [1, 0, 0, 0],
-            [0, cos(phi), sin(phi), -k * sin(phi) - n * cos(phi) + n],
-            [0, -sin(phi), cos(phi), -k * cos(phi) + n * sin(phi) + k],
+            [0, cos(phi), sin(phi), 0],
+            [0, -sin(phi), cos(phi), 0],
             [0, 0, 0, 1]])
 
         mat_y = np.array([
-            [cos(theta), 0, -sin(theta), k * sin(theta) - m * cos(theta) + m],
+            [cos(theta), 0, -sin(theta), 0],
             [0, 1, 0, 0],
-            [sin(theta), 0, cos(theta), -k * cos(theta) - m * sin(theta) + k],
+            [sin(theta), 0, cos(theta), 0],
             [0, 0, 0, 1]])
 
         mat_z = np.array([
-            [cos(psi), -sin(psi), 0, -m * cos(psi) + n * sin(psi) + m],
-            [sin(psi), cos(psi), 0, -m * sin(psi) - n * cos(psi) + n],
+            [cos(psi), -sin(psi), 0, 0],
+            [sin(psi), cos(psi), 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]])
 
-        self.shape.transform(mat_x)
-        self.shape.transform(mat_y)
-        self.shape.transform(mat_z)
+        mat_fwd = np.array([
+            [1, 0, 0, m],
+            [0, 1, 0, n],
+            [0, 0, 1, k],
+            [0, 0, 0, 1]
+        ])
+
+        mat = mat_fwd @ mat_x @ mat_y @ mat_z @ mat_back
+        self.shape.transform(mat)
         self.reset(del_shape=False)
         self.shape.draw(self.canvas, self.projection)
 
