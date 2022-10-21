@@ -474,17 +474,18 @@ class App(tk.Tk):
         self.canvas.delete("all")
         if del_shape:
             self.shape = None
-        if self._axis.get():
-            ln = 100
-            Line(Point(-ln, 0, 0), Point(ln, 0, 0)).draw(self.canvas, self.projection, col='red') # x axis
-            Line(Point(0, -ln, 0), Point(0, ln, 0)).draw(self.canvas, self.projection, col='green') # y axis
-            Line(Point(0, 0, -ln), Point(0, 0, ln)).draw(self.canvas, self.projection, col='blue') # z axis
+
         if self._grid.get():
             for i in range(-self.W, self.W, 50):
                 Line(Point(i, 0, -self.H), Point(i, 0, self.H)).draw(self.canvas, self.projection, col='gray')
             for i in range(-self.H, self.H, 50):
                 Line(Point(-self.W, 0, i), Point(self.W, 0, i)).draw(self.canvas, self.projection, col='gray')
 
+        if self._axis.get():
+            ln = 100
+            Line(Point(-ln, 0, 0), Point(ln, 0, 0)).draw(self.canvas, self.projection, col='red')  # x axis
+            Line(Point(0, -ln, 0), Point(0, ln, 0)).draw(self.canvas, self.projection, col='green')  # y axis
+            Line(Point(0, 0, -ln), Point(0, 0, ln)).draw(self.canvas, self.projection, col='blue')  # z axis
 
     def rotate(self):
         inp = sd.askstring(
