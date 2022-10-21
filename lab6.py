@@ -749,6 +749,8 @@ class App(tk.Tk):
                     mb.showerror("Ошибка", "Неверно указаны координаты начала и конца линии")
                     return
 
+                l = Line(Point(a, b, c), Point(x, y, z))
+
                 d = np.linalg.norm([x, y, z])
                 x = x / d
                 y = y / d
@@ -773,10 +775,10 @@ class App(tk.Tk):
                     [0, 0, 1, c],
                     [0, 0, 0, 1]])
 
-                self.shape.transform(mat_back)
-                self.shape.transform(mat_rot)
-                self.shape.transform(mat_fwd)
+                mat = mat_fwd @ mat_rot @ mat_back
+                self.shape.transform(mat)
                 self.reset(del_shape=False)
+                l.draw(self.canvas, self.projection, col='orange')
                 self.shape.draw(self.canvas, self.projection)
 
     def run(self):
