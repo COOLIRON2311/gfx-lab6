@@ -133,7 +133,7 @@ class Point(Shape):
             y = self.y
             z = self.z
         canvas.create_oval(x - 2, y - 2, x + 2, y + 2,
-                           fill="white")
+                           fill=kwargs.get("col", "white"))
         return x, y, z
 
     def __iter__(self):
@@ -166,7 +166,7 @@ class Line(Shape):
     def draw(self, canvas: tk.Canvas, projection: Projection, **kwargs):
         p1X, p1Y, _ = self.p1.draw(canvas, projection)
         p2X, p2Y, _ = self.p2.draw(canvas, projection)
-        canvas.create_line(p1X, p1Y, p2X, p2Y, **kwargs, fill="white")
+        canvas.create_line(p1X, p1Y, p2X, p2Y, fill=kwargs.get("col", "white"))
 
     def transform(self, matrix: np.ndarray):
         self.p1.transform(matrix)
@@ -407,6 +407,9 @@ class App(tk.Tk):
         self.dists = tk.Scale(self.buttons, from_=1, to=self.W, orient=tk.HORIZONTAL,
                               label="Расстояние", command=self._dist_changed)
 
+        self._axis = tk.BooleanVar()
+        self.axis = tk.Checkbutton(self.buttons, text="Оси", var=self._axis, command=self.reset)
+
         self.shapesbox = tk.Listbox(
             self.buttons, selectmode=tk.SINGLE, height=1, width=15)
         self.scroll1 = tk.Scrollbar(
@@ -429,6 +432,7 @@ class App(tk.Tk):
         self.phis.pack(side=tk.LEFT, padx=5)
         self.thetas.pack(side=tk.LEFT, padx=5)
         self.dists.pack(side=tk.LEFT, padx=5)
+        self.axis.pack(side=tk.LEFT, padx=5)
 
         self.phis.set(self.phi)
         self.thetas.set(self.theta)
@@ -466,6 +470,11 @@ class App(tk.Tk):
         self.canvas.delete("all")
         if del_shape:
             self.shape = None
+        if self._axis.get():
+            ln = 100
+            Line(Point(-ln, 0, 0), Point(ln, 0, 0)).draw(self.canvas, self.projection, col='red') # x axis
+            Line(Point(0, -ln, 0), Point(0, ln, 0)).draw(self.canvas, self.projection, col='green') # y axis
+            Line(Point(0, 0, -ln), Point(0, 0, ln)).draw(self.canvas, self.projection, col='blue') # z axis
 
     def rotate(self):
         inp = sd.askstring(
@@ -628,6 +637,7 @@ class App(tk.Tk):
                     [0, -1, 0, 0],
                     [0, 0, 1, 0],
                     [0, 0, 0, 1]])
+
                 match plane:
                     case 'XY':
                         self.shape.transform(mat_xy)
