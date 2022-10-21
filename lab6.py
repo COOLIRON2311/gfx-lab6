@@ -410,6 +410,9 @@ class App(tk.Tk):
         self._axis = tk.BooleanVar()
         self.axis = tk.Checkbutton(self.buttons, text="Оси", var=self._axis, command=self.reset)
 
+        self._grid = tk.BooleanVar()
+        self.grid = tk.Checkbutton(self.buttons, text="Сетка", var=self._grid, command=self.reset)
+
         self.shapesbox = tk.Listbox(
             self.buttons, selectmode=tk.SINGLE, height=1, width=15)
         self.scroll1 = tk.Scrollbar(
@@ -433,6 +436,7 @@ class App(tk.Tk):
         self.thetas.pack(side=tk.LEFT, padx=5)
         self.dists.pack(side=tk.LEFT, padx=5)
         self.axis.pack(side=tk.LEFT, padx=5)
+        self.grid.pack(side=tk.LEFT, padx=5)
 
         self.phis.set(self.phi)
         self.thetas.set(self.theta)
@@ -475,6 +479,12 @@ class App(tk.Tk):
             Line(Point(-ln, 0, 0), Point(ln, 0, 0)).draw(self.canvas, self.projection, col='red') # x axis
             Line(Point(0, -ln, 0), Point(0, ln, 0)).draw(self.canvas, self.projection, col='green') # y axis
             Line(Point(0, 0, -ln), Point(0, 0, ln)).draw(self.canvas, self.projection, col='blue') # z axis
+        if self._grid.get():
+            for i in range(-self.W, self.W, 50):
+                Line(Point(i, 0, -self.H), Point(i, 0, self.H)).draw(self.canvas, self.projection, col='gray')
+            for i in range(-self.H, self.H, 50):
+                Line(Point(-self.W, 0, i), Point(self.W, 0, i)).draw(self.canvas, self.projection, col='gray')
+
 
     def rotate(self):
         inp = sd.askstring(
